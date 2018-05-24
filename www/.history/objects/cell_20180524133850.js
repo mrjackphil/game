@@ -188,8 +188,8 @@ class Cell{
 
         [x.x, y.x] = [y.x, x.x];
         [x.y, y.y] = [y.y, x.y];
-        [first.column, second.column] = [second.column, first.column];
-        [first.row, second.row] = [second.row, first.row];
+        [x.column, y.column] = [y.column, x.column];
+        [x.row, y.row] = [y.row, x.row];
         let ar1 = cellHandler.objects.indexOf(first);
         let ar2 = cellHandler.objects.indexOf(second);
 

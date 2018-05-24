@@ -39,16 +39,8 @@ class Cell{
         cellHandler.add(this); //add to cellHandler
         this.object = this.game.add.sprite(x,y,'diamond',this.color).setInteractive();//create and remember object
         this.object.on('pointerdown', function (pointer, gameObject){
-            let chosens = cellHandler.objects.filter(i=>i.chosen===true);
-            if (chosens.length){
-                Cell.switchCells(this, chosens[0]);
-                let all = cellHandler.objects;
-                for (let a in all){all[a].object.alpha = 1;}
-                this.destroyMatched(all);
-                this.unchooseAll();
-            }else{
             this.choose();
-            }
+            this.destroyMatched(this.checkMatches());
         },this);
     };
 
@@ -182,28 +174,10 @@ class Cell{
 
         return all; 
     }
-    static switchCells(first, second){
-        let x = first.object;
-        let y = second.object;
-
-        [x.x, y.x] = [y.x, x.x];
-        [x.y, y.y] = [y.y, x.y];
-        [first.column, second.column] = [second.column, first.column];
-        [first.row, second.row] = [second.row, first.row];
-        let ar1 = cellHandler.objects.indexOf(first);
-        let ar2 = cellHandler.objects.indexOf(second);
-
-        cellHandler.objects[ar1] = second;
-        cellHandler.objects[ar2] = first;
-
-    }
 
     destroyMatched(array){
         for (let a in array){
-            let matches = this.checkMatches(array[a]);
-            for (let m in matches){
-                matches[m].object.alpha = 0.5;
-            }
+            a.object.alpha = 0.5;
         }
     }
 }

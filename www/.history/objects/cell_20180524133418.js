@@ -43,7 +43,6 @@ class Cell{
             if (chosens.length){
                 Cell.switchCells(this, chosens[0]);
                 let all = cellHandler.objects;
-                for (let a in all){all[a].object.alpha = 1;}
                 this.destroyMatched(all);
                 this.unchooseAll();
             }else{
@@ -188,8 +187,8 @@ class Cell{
 
         [x.x, y.x] = [y.x, x.x];
         [x.y, y.y] = [y.y, x.y];
-        [first.column, second.column] = [second.column, first.column];
-        [first.row, second.row] = [second.row, first.row];
+        [x.column, y.column] = [y.column, x.column];
+        [x.row, y.row] = [y.row, x.row];
         let ar1 = cellHandler.objects.indexOf(first);
         let ar2 = cellHandler.objects.indexOf(second);
 
@@ -200,9 +199,8 @@ class Cell{
 
     destroyMatched(array){
         for (let a in array){
-            let matches = this.checkMatches(array[a]);
-            for (let m in matches){
-                matches[m].object.alpha = 0.5;
+            for (let m in this.checkMatches(a)){
+                m.object.alpha = 0.5;
             }
         }
     }
