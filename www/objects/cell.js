@@ -53,11 +53,11 @@ class Cell{
             if (chosens.length){
                 Cell.switchCells(this, chosens[0]);
                 let all = cellHandler.objects;
-                for (let a in all){all[a].object.alpha = 1;}
                 this.destroyMatched(all);
                 this.unchooseAll();
-                for (let a in all){
-                    this.fall(all[a]);
+                while (cellHandler.objects.length < 25){
+                    this.fall(all);
+                    this.createNew();
                 }
             }else{
             this.choose();
@@ -242,23 +242,38 @@ class Cell{
         this.unchooseAll();
     }
 
-    fall(cell){
-        let condition = cellHandler.objects.find(i=>i.column === cell.column && i.row === cell.row + 1)
-        if (typeof condition === 'undefined' && cell.row !== board.row_count - 1){
-            this.moveTo(cell, cell.column, cell.row + 1);
+    fall(array){
+        for (let c in array){
+            let cell = array[c];
+            let condition = cellHandler.objects.find(i=>i.column === cell.column && i.row === cell.row + 1)
+            if (typeof condition === 'undefined' && cell.row !== board.row_count - 1){
+                this.moveTo(cell, cell.column, cell.row + 1);
+            }
         }
     }
     moveTo(cell, column,row){
         let i = cellHandler.objects.indexOf(cell);
-        cell.tween = this.game.tweens.add({
+        cell.fall = this.game.tweens.add({
             targets: cell.object,
             x: board.cell_size + column * board.cell_size,
             y: board.cell_size + row * board.cell_size,
             duration: 1000,
             ease: 'Power2',
+            onComplete: () =>{delete cell.fall}
         });
         cell.column = column;
         cell.row = row;
         cellHandler.objects[i] = cell;
+    }
+    createNew(){
+        for (let r=0; r< board.column_count; r++){
+            if (typeof cellHandler.objects.find(i=>i.column === r && i.row === 0) === 'undefined'){
+                let cll = new Cell(this.game,board.cell_size);
+                cll.init(board.cell_size + (r*board.cell_size),board.cell_size)
+                cll.column = r;
+                cll.row = 0;
+            }
+
+        }
     }
 }
