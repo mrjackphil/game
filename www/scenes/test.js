@@ -1,4 +1,5 @@
 let cellHandler;
+let board;
 class Test extends Phaser.Scene{
     constructor(){
         super({key:'Test'});
@@ -13,7 +14,7 @@ class Test extends Phaser.Scene{
 
     create ()
     {
-        let board = new Board(this, 5, 5, 64);
+        board = new Board(this, 5, 5, 64);
     }
     update(){
     }

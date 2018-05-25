@@ -16,7 +16,17 @@ class Cell{
         let _cell_color = color || Cell.randomDiamond();
 
         this.game = game;
-        this.id = cellHandler.objects.length ? cellHandler.objects[cellHandler.objects.length-1].id + 1 : 0;
+        this.id = cellHandler.objects.length ? nextId() : 0
+
+        function nextId (){
+            let max = 0;
+            for (let c in cellHandler.objects){
+                let c_id = cellHandler.objects[c].id;
+                if (c_id > max) max = c_id
+            }
+            return max + 1
+        }
+
         this.size = size;
         this.object;
         this.column;
@@ -46,6 +56,9 @@ class Cell{
                 for (let a in all){all[a].object.alpha = 1;}
                 this.destroyMatched(all);
                 this.unchooseAll();
+                for (let a in all){
+                    this.fall(all[a]);
+                }
             }else{
             this.choose();
             }
@@ -88,7 +101,9 @@ class Cell{
         }
     }
     animateScale(){ //Animate new cell
-        for (let i in cellHandler.objects) cellHandler.objects[i].object.setDepth(0);
+        for (let i in cellHandler.objects) {
+            cellHandler.objects[i].object.setDepth(0);
+        }
         this.object.setDepth(1);
         this.tween = this.game.tweens.add({
             targets: [this.object],
@@ -186,8 +201,24 @@ class Cell{
         let x = first.object;
         let y = second.object;
 
-        [x.x, y.x] = [y.x, x.x];
-        [x.y, y.y] = [y.y, x.y];
+        // [x.x, y.x] = [y.x, x.x];
+        // [x.y, y.y] = [y.y, x.y];
+
+        x.tween = first.game.tweens.add({
+            targets: x,
+            x: y.x,
+            y: y.y,
+            duration: 1000,
+            ease: 'Power2',
+        });
+        y.tween = second.game.tweens.add({
+            targets: y,
+            x: x.x,
+            y: x.y,
+            duration: 1000,
+            ease: 'Power2',
+        });
+
         [first.column, second.column] = [second.column, first.column];
         [first.row, second.row] = [second.row, first.row];
         let ar1 = cellHandler.objects.indexOf(first);
@@ -202,8 +233,32 @@ class Cell{
         for (let a in array){
             let matches = this.checkMatches(array[a]);
             for (let m in matches){
-                matches[m].object.alpha = 0.5;
+                let ind_in_array = cellHandler.objects.indexOf(matches[m]);
+                cellHandler.objects.splice(ind_in_array, 1);
+                matches[m].object.destroy();
+                delete matches[m];
             }
         }
+        this.unchooseAll();
+    }
+
+    fall(cell){
+        let condition = cellHandler.objects.find(i=>i.column === cell.column && i.row === cell.row + 1)
+        if (typeof condition === 'undefined' && cell.row !== board.row_count - 1){
+            this.moveTo(cell, cell.column, cell.row + 1);
+        }
+    }
+    moveTo(cell, column,row){
+        let i = cellHandler.objects.indexOf(cell);
+        cell.tween = this.game.tweens.add({
+            targets: cell.object,
+            x: board.cell_size + column * board.cell_size,
+            y: board.cell_size + row * board.cell_size,
+            duration: 1000,
+            ease: 'Power2',
+        });
+        cell.column = column;
+        cell.row = row;
+        cellHandler.objects[i] = cell;
     }
 }
