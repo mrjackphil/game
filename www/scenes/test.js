@@ -1,11 +1,11 @@
-let cellHandler;
 let board;
+let currentdate = new Date(); 
 class Test extends Phaser.Scene{
     constructor(){
         super({key:'Test'});
     }
     init(){
-        cellHandler = new CellHandler;
+        localStorage.score = Number(0);
     }
     preload ()
     {
@@ -15,8 +15,10 @@ class Test extends Phaser.Scene{
     create ()
     {
         board = new Board(this, 5, 5, 64);
+        board.generateBoard();
     }
     update(){
+        localStorage.date = String(currentdate.getMonth()) + String(currentdate.getDate()) + String(currentdate.getHours());
     }
 }
 

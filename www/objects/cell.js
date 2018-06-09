@@ -1,27 +1,15 @@
-class CellHandler{ //save all cells in array
-    constructor(){
-        this.objects=[];
-    }
-    add(obj){
-        if (obj.isArray) this.objects = this.objects.concat(obj);
-        if (typeof obj === 'object') this.objects.push(obj);
-    }
-    remove(){
-    }
-}
-
 class Cell{
     constructor(game, size, color){
 
         let _cell_color = color || Cell.randomDiamond();
 
         this.game = game;
-        this.id = cellHandler.objects.length ? nextId() : 0
+        this.id = board.handler.objects.length ? nextId() : 0
 
         function nextId (){
             let max = 0;
-            for (let c in cellHandler.objects){
-                let c_id = cellHandler.objects[c].id;
+            for (let c in board.handler.objects){
+                let c_id = board.handler.objects[c].id;
                 if (c_id > max) max = c_id
             }
             return max + 1
@@ -46,24 +34,27 @@ class Cell{
         
     }
     init(x,y){
-        cellHandler.add(this); //add to cellHandler
+        board.handler.add(this); //add to cellHandler
         this.object = this.game.add.sprite(x,y,'diamond',this.color).setInteractive();//create and remember object
         this.object.on('pointerdown', function (pointer, gameObject){
-            let chosens = cellHandler.objects.filter(i=>i.chosen===true);
+            let chosens = board.handler.objects.filter(i=>i.chosen===true);
             if (chosens.length){
                 Cell.switchCells(this, chosens[0]);
-                let all = cellHandler.objects;
-                this.destroyMatched(all);
-                this.unchooseAll();
-                while (cellHandler.objects.length < 25){
-                    this.fall(all);
-                    this.createNew();
-                }
+                this.destroyAndFall();
             }else{
             this.choose();
             }
         },this);
     };
+
+    destroyAndFall(){
+        let all = board.handler.objects;
+        this.destroyMatched(all);
+        while (board.handler.objects.length < 25){
+            this.falling(all);
+            this.createNew();
+        }
+    }
 
     //Getters and setters for cell
     static randomDiamond(){
@@ -87,7 +78,7 @@ class Cell{
     }
     unchooseAll(){ 
         //Stop all tweens
-        let tweenCells = cellHandler.objects.filter(i=>i.tween);
+        let tweenCells = board.handler.objects.filter(i=>i.tween);
         for (let i in tweenCells) {
             const cTw = tweenCells[i];
             cTw.tween.stop();
@@ -95,14 +86,14 @@ class Cell{
             cTw.object.scaleY = 1;
             delete cTw.tween;
         }
-        let chosens = cellHandler.objects.filter(i=>i.chosen===true);
+        let chosens = board.handler.objects.filter(i=>i.chosen===true);
         for (let c in chosens){
             chosens[c].chosen = false
         }
     }
     animateScale(){ //Animate new cell
-        for (let i in cellHandler.objects) {
-            cellHandler.objects[i].object.setDepth(0);
+        for (let i in board.handler.objects) {
+            board.handler.objects[i].object.setDepth(0);
         }
         this.object.setDepth(1);
         this.tween = this.game.tweens.add({
@@ -147,7 +138,7 @@ class Cell{
             ) return true
         }
 
-        let vertical = cellHandler.objects //Check horizontals
+        let vertical = board.handler.objects //Check horizontals
                                 .filter(i=>i.color === cur.color)//all the same color
                                 .filter(i=>vert(i));
 
@@ -155,11 +146,11 @@ class Cell{
             if (vertical[c].match !== true)(this.checkVertical(vertical[c], [], true));
         }
 
-        let all = cellHandler.objects.filter(i=>i.match === true);
+        let all = board.handler.objects.filter(i=>i.match === true);
 
         if (iteration !== true){
-            for (let c in cellHandler.objects){
-                cellHandler.objects[c].match = false;
+            for (let c in board.handler.objects){
+                board.handler.objects[c].match = false;
             }
         }
 
@@ -178,7 +169,7 @@ class Cell{
             ) return true
         }
 
-        let horizontal = cellHandler.objects //Check horizontals
+        let horizontal = board.handler.objects //Check horizontals
                         .filter(i=>i.color === cur.color)//all the same color
                         .filter(i=>horiz(i));
         
@@ -187,11 +178,11 @@ class Cell{
             if (horizontal[c].match !== true)(this.checkHorizontal(horizontal[c], [], true));
         }
 
-        let all = cellHandler.objects.filter(i=>i.match === true);
+        let all = board.handler.objects.filter(i=>i.match === true);
 
         if (iteration !== true){
-            for (let c in cellHandler.objects){
-                cellHandler.objects[c].match = false;
+            for (let c in board.handler.objects){
+                board.handler.objects[c].match = false;
             }
         }
 
@@ -208,66 +199,76 @@ class Cell{
             targets: x,
             x: y.x,
             y: y.y,
-            duration: 1000,
+            duration: 500,
             ease: 'Power2',
         });
         y.tween = second.game.tweens.add({
             targets: y,
             x: x.x,
             y: x.y,
-            duration: 1000,
+            duration: 500,
             ease: 'Power2',
         });
 
         [first.column, second.column] = [second.column, first.column];
         [first.row, second.row] = [second.row, first.row];
-        let ar1 = cellHandler.objects.indexOf(first);
-        let ar2 = cellHandler.objects.indexOf(second);
+        let ar1 = board.handler.objects.indexOf(first);
+        let ar2 = board.handler.objects.indexOf(second);
 
-        cellHandler.objects[ar1] = second;
-        cellHandler.objects[ar2] = first;
+        board.handler.objects[ar1] = second;
+        board.handler.objects[ar2] = first;
 
     }
 
     destroyMatched(array){
+        let is = false;
+        let matches = [];
         for (let a in array){
-            let matches = this.checkMatches(array[a]);
-            for (let m in matches){
-                let ind_in_array = cellHandler.objects.indexOf(matches[m]);
-                cellHandler.objects.splice(ind_in_array, 1);
-                matches[m].object.destroy();
-                delete matches[m];
-            }
+            let m = this.checkMatches(array[a]);
+            matches = matches.concat(
+                m.filter(x=>matches.indexOf(x) === -1)
+            )};
+        for (let m in matches){
+            let ind_in_array = board.handler.objects.indexOf(matches[m]);
+            board.handler.objects.splice(ind_in_array, 1);
+            matches[m].object.destroy();
+            delete matches[m];
+            localStorage.score = Number(localStorage.score) + Number(1);
+            is = true;
         }
         this.unchooseAll();
+        return is
     }
 
-    fall(array){
+    falling(array){
         for (let c in array){
             let cell = array[c];
-            let condition = cellHandler.objects.find(i=>i.column === cell.column && i.row === cell.row + 1)
+            let condition = board.handler.objects.find(i=>i.column === cell.column && i.row === cell.row + 1)
             if (typeof condition === 'undefined' && cell.row !== board.row_count - 1){
                 this.moveTo(cell, cell.column, cell.row + 1);
             }
         }
     }
     moveTo(cell, column,row){
-        let i = cellHandler.objects.indexOf(cell);
+        let i = board.handler.objects.indexOf(cell);
         cell.fall = this.game.tweens.add({
             targets: cell.object,
             x: board.cell_size + column * board.cell_size,
             y: board.cell_size + row * board.cell_size,
-            duration: 1000,
+            duration: 500,
             ease: 'Power2',
-            onComplete: () =>{delete cell.fall}
+            onComplete: () =>{
+                delete cell.fall;
+                this.destroyAndFall(); 
+            }
         });
         cell.column = column;
         cell.row = row;
-        cellHandler.objects[i] = cell;
+        board.handler.objects[i] = cell;
     }
     createNew(){
         for (let r=0; r< board.column_count; r++){
-            if (typeof cellHandler.objects.find(i=>i.column === r && i.row === 0) === 'undefined'){
+            if (typeof board.handler.objects.find(i=>i.column === r && i.row === 0) === 'undefined'){
                 let cll = new Cell(this.game,board.cell_size);
                 cll.init(board.cell_size + (r*board.cell_size),board.cell_size)
                 cll.column = r;

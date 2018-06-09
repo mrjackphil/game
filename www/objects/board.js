@@ -4,11 +4,10 @@ class Board{
         this.column_count = n_column;
         this.row_count = n_row;
         this.cell_size = cell_size;
-        this.init();
+        this.handler = new CellHandler;
     }
     init(){
         this.generateBoard();
-
     }
     generateBoard(){
         for (let c=0;c<this.column_count;c++){
