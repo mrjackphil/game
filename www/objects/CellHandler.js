@@ -8,6 +8,11 @@ class CellHandler {
         if (typeof obj === 'object')
             this.objects.push(obj);
     }
-    remove() {
+    remove(obj) {
+        if (obj.isArray) console.log('not done');
+            //ToDO
+        if (typeof obj === 'object'){
+            this.objects.splice(this.objects.indexOf(obj), 1);
+        }
     }
 }

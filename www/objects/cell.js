@@ -37,19 +37,16 @@ class Cell{
         board.handler.add(this); //add to cellHandler
         this.object = this.game.add.sprite(x,y,'diamond',this.color).setInteractive();//create and remember object
         this.object.on('pointerdown', function (pointer, gameObject){
-            let chosens = board.handler.objects.filter(i=>i.chosen===true);
-            if (chosens.length){
-                Cell.switchCells(this, chosens[0]);
-                this.destroyAndFall();
-            }else{
-            this.choose();
-            }
+            input.onCellClick(this);
+        },this);
+        this.object.on('pointerup', function (pointer){
+            input.onRelease(this);
         },this);
     };
 
     destroyAndFall(){
         let all = board.handler.objects;
-        this.destroyMatched(all);
+        if (!this.destroyMatched(all)) return false
         while (board.handler.objects.length < 25){
             this.falling(all);
             this.createNew();
@@ -68,15 +65,15 @@ class Cell{
     }
     choose(){ // when choose cell
         if (this.tween === undefined){ //if not animated
-            this.unchooseAll();
+            Cell.unchooseAll();
             this.animateScale();
             this.chosen = true;
         }else{
-            this.unchooseAll();
+            Cell.unchooseAll();
             this.chosen = false;
         }
     }
-    unchooseAll(){ 
+    static unchooseAll(){ 
         //Stop all tweens
         let tweenCells = board.handler.objects.filter(i=>i.tween);
         for (let i in tweenCells) {
@@ -189,11 +186,18 @@ class Cell{
         return all; 
     }
     static switchCells(first, second){
+        let complete = false;
         let x = first.object;
         let y = second.object;
 
-        // [x.x, y.x] = [y.x, x.x];
-        // [x.y, y.y] = [y.y, x.y];
+        if (first.column + 1 === second.column && first.row === second.row ||
+            first.column - 1 === second.column && first.row === second.row ||
+            first.row + 1 === second.row && first.column === second.column ||
+            first.row - 1 === second.row && first.column === second.column ) {
+            }
+            else{
+                return
+            }
 
         x.tween = first.game.tweens.add({
             targets: x,
@@ -201,6 +205,17 @@ class Cell{
             y: y.y,
             duration: 500,
             ease: 'Power2',
+            onComplete: () =>{
+                if (complete){
+                    x.tween = first.game.tweens.add({
+                        targets: x,
+                        x: y.x,
+                        y: y.y,
+                        duration: 500,
+                        ease: 'Power2',
+                    })
+                }
+            }
         });
         y.tween = second.game.tweens.add({
             targets: y,
@@ -208,16 +223,28 @@ class Cell{
             y: x.y,
             duration: 500,
             ease: 'Power2',
+            onComplete: () =>{
+                if (complete){
+                    y.tween = second.game.tweens.add({
+                        targets: y,
+                        x: x.x,
+                        y: x.y,
+                        duration: 500,
+                        ease: 'Power2',
+                    })
+                }
+            }
         });
 
-        [first.column, second.column] = [second.column, first.column];
-        [first.row, second.row] = [second.row, first.row];
-        let ar1 = board.handler.objects.indexOf(first);
-        let ar2 = board.handler.objects.indexOf(second);
+        if (!   complete){
+            [first.column, second.column] = [second.column, first.column];
+            [first.row, second.row] = [second.row, first.row];
+            let ar1 = board.handler.objects.indexOf(first);
+            let ar2 = board.handler.objects.indexOf(second);
 
-        board.handler.objects[ar1] = second;
-        board.handler.objects[ar2] = first;
-
+            board.handler.objects[ar1] = second;
+            board.handler.objects[ar2] = first;
+        }
     }
 
     destroyMatched(array){
@@ -229,14 +256,13 @@ class Cell{
                 m.filter(x=>matches.indexOf(x) === -1)
             )};
         for (let m in matches){
-            let ind_in_array = board.handler.objects.indexOf(matches[m]);
-            board.handler.objects.splice(ind_in_array, 1);
+            board.handler.remove(matches[m]);
             matches[m].object.destroy();
             delete matches[m];
             localStorage.score = Number(localStorage.score) + Number(1);
             is = true;
         }
-        this.unchooseAll();
+        Cell.unchooseAll();
         return is
     }
 
@@ -249,7 +275,7 @@ class Cell{
             }
         }
     }
-    moveTo(cell, column,row){
+    moveTo(cell, column, row){
         let i = board.handler.objects.indexOf(cell);
         cell.fall = this.game.tweens.add({
             targets: cell.object,
@@ -266,7 +292,7 @@ class Cell{
         cell.row = row;
         board.handler.objects[i] = cell;
     }
-    createNew(){
+    createNew(){ //Create new cell on empty place (by checking handler array)
         for (let r=0; r< board.column_count; r++){
             if (typeof board.handler.objects.find(i=>i.column === r && i.row === 0) === 'undefined'){
                 let cll = new Cell(this.game,board.cell_size);

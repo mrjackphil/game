@@ -1,4 +1,5 @@
 let board;
+let input;
 let currentdate = new Date(); 
 class Test extends Phaser.Scene{
     constructor(){
@@ -14,6 +15,10 @@ class Test extends Phaser.Scene{
 
     create ()
     {
+        this.input.on('pointerup', (pointer,gameObjects)=>{
+            if (!gameObjects.length)Cell.unchooseAll();
+        })
+        input = new Input(this);
         board = new Board(this, 5, 5, 64);
         board.generateBoard();
     }
